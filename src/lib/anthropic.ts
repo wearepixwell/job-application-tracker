@@ -57,9 +57,25 @@ Return ONLY valid JSON, no other text.`
   }
 
   try {
-    return JSON.parse(content.text) as MatchAnalysis
-  } catch {
+    // Strip markdown code block formatting if present
+    let jsonText = content.text.trim()
+    if (jsonText.startsWith('```json')) {
+      jsonText = jsonText.slice(7)
+    } else if (jsonText.startsWith('```')) {
+      jsonText = jsonText.slice(3)
+    }
+    if (jsonText.endsWith('```')) {
+      jsonText = jsonText.slice(0, -3)
+    }
+    jsonText = jsonText.trim()
+
+    const result = JSON.parse(jsonText) as MatchAnalysis
+    console.log('Match analysis result:', JSON.stringify(result, null, 2))
+    return result
+  } catch (error) {
     // If JSON parsing fails, return default values
+    console.error('Failed to parse match analysis JSON:', error)
+    console.error('Raw response:', content.text)
     return {
       overallScore: 50,
       matchingSkills: [],
@@ -116,9 +132,23 @@ Return ONLY valid JSON array, no other text.`
   }
 
   try {
-    return JSON.parse(content.text) as CoverLetterBullet[]
-  } catch {
+    // Strip markdown code block formatting if present
+    let jsonText = content.text.trim()
+    if (jsonText.startsWith('```json')) {
+      jsonText = jsonText.slice(7)
+    } else if (jsonText.startsWith('```')) {
+      jsonText = jsonText.slice(3)
+    }
+    if (jsonText.endsWith('```')) {
+      jsonText = jsonText.slice(0, -3)
+    }
+    jsonText = jsonText.trim()
+
+    return JSON.parse(jsonText) as CoverLetterBullet[]
+  } catch (error) {
     // If JSON parsing fails, return empty array
+    console.error('Failed to parse cover letter bullets JSON:', error)
+    console.error('Raw response:', content.text)
     return []
   }
 }
