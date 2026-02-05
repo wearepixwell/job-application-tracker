@@ -1,9 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist'
-
-// Disable worker for serverless environment
-GlobalWorkerOptions.workerSrc = ''
+import { extractText } from 'unpdf'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -24,23 +21,6 @@ async function getOrCreateProfile() {
   return profile
 }
 
-// Extract text from PDF using pdfjs-dist
-async function extractTextFromPDF(buffer: ArrayBuffer): Promise<string> {
-  const pdf = await getDocument({ data: buffer, useWorkerFetch: false, isEvalSupported: false, useSystemFonts: true }).promise
-  let fullText = ''
-
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i)
-    const textContent = await page.getTextContent()
-    const pageText = textContent.items
-      .map((item: unknown) => (item as { str: string }).str)
-      .join(' ')
-    fullText += pageText + '\n'
-  }
-
-  return fullText
-}
-
 export async function POST(request: Request) {
   try {
     const formData = await request.formData()
@@ -57,9 +37,10 @@ export async function POST(request: Request) {
     const fileName = file.name
 
     if (file.type === 'application/pdf') {
-      // Parse PDF using pdfjs-dist
+      // Parse PDF using unpdf (serverless compatible)
       const arrayBuffer = await file.arrayBuffer()
-      text = await extractTextFromPDF(arrayBuffer)
+      const { text: pdfText } = await extractText(arrayBuffer)
+      text = pdfText
     } else if (file.type === 'text/plain') {
       // Parse plain text
       text = await file.text()
