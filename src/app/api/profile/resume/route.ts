@@ -40,7 +40,8 @@ export async function POST(request: Request) {
       // Parse PDF using unpdf (serverless compatible)
       const arrayBuffer = await file.arrayBuffer()
       const { text: pdfText } = await extractText(arrayBuffer)
-      text = pdfText
+      // pdfText is an array of strings (one per page), join them
+      text = Array.isArray(pdfText) ? pdfText.join('\n') : pdfText
     } else if (file.type === 'text/plain') {
       // Parse plain text
       text = await file.text()
