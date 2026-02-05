@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist'
+
+// Disable worker for serverless environment
+GlobalWorkerOptions.workerSrc = ''
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -20,6 +24,23 @@ async function getOrCreateProfile() {
   return profile
 }
 
+// Extract text from PDF using pdfjs-dist
+async function extractTextFromPDF(buffer: ArrayBuffer): Promise<string> {
+  const pdf = await getDocument({ data: buffer, useWorkerFetch: false, isEvalSupported: false, useSystemFonts: true }).promise
+  let fullText = ''
+
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i)
+    const textContent = await page.getTextContent()
+    const pageText = textContent.items
+      .map((item: unknown) => (item as { str: string }).str)
+      .join(' ')
+    fullText += pageText + '\n'
+  }
+
+  return fullText
+}
+
 export async function POST(request: Request) {
   try {
     const formData = await request.formData()
@@ -36,27 +57,9 @@ export async function POST(request: Request) {
     const fileName = file.name
 
     if (file.type === 'application/pdf') {
-      // Parse PDF using dynamic require
+      // Parse PDF using pdfjs-dist
       const arrayBuffer = await file.arrayBuffer()
-      const buffer = Buffer.from(arrayBuffer)
-
-      // Use require for CommonJS module
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const pdfParse = require('pdf-parse/lib/pdf-parse.js')
-      // Disable the test render function that requires canvas/DOMMatrix
-      const pdfData = await pdfParse(buffer, {
-        // Custom page render that just returns text without canvas
-        pagerender: function(pageData: { getTextContent: () => Promise<{ items: Array<{ str: string }> }> }) {
-          return pageData.getTextContent().then(function(textContent: { items: Array<{ str: string }> }) {
-            let lastY, text = '';
-            for (const item of textContent.items) {
-              text += item.str + ' ';
-            }
-            return text;
-          });
-        }
-      })
-      text = pdfData.text
+      text = await extractTextFromPDF(arrayBuffer)
     } else if (file.type === 'text/plain') {
       // Parse plain text
       text = await file.text()
