@@ -42,8 +42,20 @@ export async function POST(request: Request) {
 
       // Use require for CommonJS module
       // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const pdfParse = require('pdf-parse')
-      const pdfData = await pdfParse(buffer)
+      const pdfParse = require('pdf-parse/lib/pdf-parse.js')
+      // Disable the test render function that requires canvas/DOMMatrix
+      const pdfData = await pdfParse(buffer, {
+        // Custom page render that just returns text without canvas
+        pagerender: function(pageData: { getTextContent: () => Promise<{ items: Array<{ str: string }> }> }) {
+          return pageData.getTextContent().then(function(textContent: { items: Array<{ str: string }> }) {
+            let lastY, text = '';
+            for (const item of textContent.items) {
+              text += item.str + ' ';
+            }
+            return text;
+          });
+        }
+      })
       text = pdfData.text
     } else if (file.type === 'text/plain') {
       // Parse plain text
