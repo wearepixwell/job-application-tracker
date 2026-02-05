@@ -2,6 +2,16 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { analyzeJobMatch, generateCoverLetterBullets } from '@/lib/anthropic'
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+}
+
+export async function OPTIONS() {
+  return NextResponse.json({}, { headers: corsHeaders })
+}
+
 interface JobScanData {
   title: string
   companyName: string
@@ -30,7 +40,7 @@ export async function POST(request: Request) {
     if (!data.title || !data.companyName || !data.description || !data.sourceUrl || !data.sourceSite) {
       return NextResponse.json(
         { error: 'Missing required fields: title, companyName, description, sourceUrl, sourceSite' },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       )
     }
 
@@ -72,7 +82,7 @@ export async function POST(request: Request) {
         job: existingJob,
         isNew: false,
         message: 'Job already scanned',
-      })
+      }, { headers: corsHeaders })
     }
 
     // Create new job
@@ -132,7 +142,7 @@ export async function POST(request: Request) {
           job: updatedJob,
           isNew: true,
           analyzed: true,
-        })
+        }, { headers: corsHeaders })
       } catch (analysisError) {
         console.error('Analysis error:', analysisError)
         // Return job without analysis
@@ -143,12 +153,12 @@ export async function POST(request: Request) {
       job,
       isNew: true,
       analyzed: false,
-    })
+    }, { headers: corsHeaders })
   } catch (error) {
     console.error('Job scan error:', error)
     return NextResponse.json(
       { error: 'Failed to process job' },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     )
   }
 }
