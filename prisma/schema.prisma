@@ -1,0 +1,179 @@
+// Prisma schema for Job Application Helper and Tracker
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// User Profile - Single user system with passcode auth
+model Profile {
+  id                  String   @id @default(cuid())
+  name                String?
+  email               String?
+  phone               String?
+  linkedinUrl         String?
+  githubUrl           String?
+  portfolioUrl        String?
+  resumeText          String?  @db.Text
+  resumeFileName      String?
+  coverLetterTemplate String?  @db.Text
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  jobs         Job[]
+  applications Application[]
+}
+
+// Company information
+model Company {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  logoUrl   String?
+  website   String?
+  industry  String?
+  size      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  jobs Job[]
+}
+
+// Scanned job postings
+model Job {
+  id          String  @id @default(cuid())
+  title       String
+  companyId   String
+  company     Company @relation(fields: [companyId], references: [id])
+  profileId   String
+  profile     Profile @relation(fields: [profileId], references: [id])
+
+  // Job Details
+  description      String        @db.Text
+  requirements     String?       @db.Text
+  responsibilities String?       @db.Text
+  location         String?
+  locationType     LocationType  @default(ONSITE)
+  salaryMin        Int?
+  salaryMax        Int?
+  salaryCurrency   String?       @default("USD")
+  salaryPeriod     SalaryPeriod?
+  employmentType   EmploymentType @default(FULL_TIME)
+  experienceLevel  ExperienceLevel?
+
+  // Source Information
+  sourceUrl  String   @unique
+  sourceSite String
+  postedDate DateTime?
+  expiryDate DateTime?
+
+  // Analysis Results
+  matchScore         Float?
+  extractedSkills    Json?
+  missingSkills      Json?
+  matchingSkills     Json?
+  coverLetterBullets Json?
+
+  // Metadata
+  isActive  Boolean  @default(true)
+  scannedAt DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  application Application?
+
+  @@index([companyId])
+  @@index([profileId])
+  @@index([sourceSite])
+  @@index([matchScore])
+}
+
+// Job applications (for Kanban tracking)
+model Application {
+  id        String           @id @default(cuid())
+  jobId     String           @unique
+  job       Job              @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  profileId String
+  profile   Profile          @relation(fields: [profileId], references: [id])
+
+  stage       ApplicationStage @default(SAVED)
+  appliedDate DateTime?
+  notes       String?          @db.Text
+
+  // Timeline tracking
+  interviewDate DateTime?
+  offerDate     DateTime?
+  rejectedDate  DateTime?
+
+  // Cover letter used for this application
+  coverLetterUsed String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([profileId])
+  @@index([stage])
+}
+
+// Metrics/Analytics (aggregated data)
+model DailyMetric {
+  id            String   @id @default(cuid())
+  date          DateTime @db.Date @unique
+  jobsScanned   Int      @default(0)
+  jobsApplied   Int      @default(0)
+  interviews    Int      @default(0)
+  offers        Int      @default(0)
+  rejections    Int      @default(0)
+  avgMatchScore Float?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([date])
+}
+
+// Enums
+enum LocationType {
+  REMOTE
+  ONSITE
+  HYBRID
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERNSHIP
+  TEMPORARY
+}
+
+enum ExperienceLevel {
+  ENTRY
+  MID
+  SENIOR
+  LEAD
+  EXECUTIVE
+}
+
+enum SalaryPeriod {
+  HOURLY
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
+}
+
+enum ApplicationStage {
+  SAVED
+  APPLIED
+  SCREENING
+  INTERVIEW
+  OFFER
+  REJECTED
+  WITHDRAWN
+  ACCEPTED
+}
