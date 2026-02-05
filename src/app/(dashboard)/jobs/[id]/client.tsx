@@ -22,6 +22,7 @@ import {
   Sparkles,
   Copy,
   ArrowLeft,
+  RefreshCw,
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -241,21 +242,24 @@ export function JobDetailsClient({ job, hasResume }: JobDetailsClientProps) {
                 How well your resume matches this job
               </CardDescription>
             </div>
-            {!currentJob.matchScore && (
-              <Button onClick={handleAnalyze} disabled={analyzing || !hasResume}>
-                {analyzing ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Analyzing...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    Analyze Match
-                  </>
-                )}
-              </Button>
-            )}
+            <Button onClick={handleAnalyze} disabled={analyzing || !hasResume} variant={currentJob.matchScore ? "outline" : "default"}>
+              {analyzing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Analyzing...
+                </>
+              ) : currentJob.matchScore ? (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Re-analyze
+                </>
+              ) : (
+                <>
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  Analyze Match
+                </>
+              )}
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
