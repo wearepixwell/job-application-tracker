@@ -171,12 +171,12 @@ export default function BoardPage() {
                               {...provided.dragHandleProps}
                             >
                               <Card
-                                className={`cursor-grab active:cursor-grabbing ${
+                                className={`cursor-grab active:cursor-grabbing overflow-hidden ${
                                   snapshot.isDragging ? 'shadow-lg' : ''
                                 }`}
                               >
                                 <CardHeader className="p-3 pb-2">
-                                  <div className="flex items-start gap-2">
+                                  <div className="flex items-start gap-2 overflow-hidden">
                                     <div className="h-8 w-8 rounded bg-muted flex items-center justify-center flex-shrink-0">
                                       {app.job.company.logoUrl ? (
                                         <img
@@ -188,8 +188,8 @@ export default function BoardPage() {
                                         <Building2 className="h-4 w-4 text-muted-foreground" />
                                       )}
                                     </div>
-                                    <div className="min-w-0 flex-1">
-                                      <CardTitle className="text-sm font-medium truncate">
+                                    <div className="min-w-0 flex-1 overflow-hidden">
+                                      <CardTitle className="text-sm font-medium truncate" title={app.job.title}>
                                         {app.job.title}
                                       </CardTitle>
                                       <p className="text-xs text-muted-foreground truncate">
@@ -198,12 +198,12 @@ export default function BoardPage() {
                                     </div>
                                   </div>
                                 </CardHeader>
-                                <CardContent className="p-3 pt-0">
-                                  <div className="flex items-center justify-between text-xs">
+                                <CardContent className="p-3 pt-0 overflow-hidden">
+                                  <div className="flex items-center justify-between text-xs gap-2">
                                     {app.job.location && (
-                                      <span className="flex items-center gap-1 text-muted-foreground truncate">
-                                        <MapPin className="h-3 w-3" />
-                                        {app.job.location}
+                                      <span className="flex items-center gap-1 text-muted-foreground truncate min-w-0 flex-1">
+                                        <MapPin className="h-3 w-3 flex-shrink-0" />
+                                        <span className="truncate">{app.job.location}</span>
                                       </span>
                                     )}
                                     {app.job.matchScore && (
