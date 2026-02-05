@@ -1,6 +1,16 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+}
+
+export async function OPTIONS() {
+  return NextResponse.json({}, { headers: corsHeaders })
+}
+
 // Get or create profile (single user system)
 async function getOrCreateProfile() {
   let profile = await prisma.profile.findFirst()
@@ -15,12 +25,12 @@ async function getOrCreateProfile() {
 export async function GET() {
   try {
     const profile = await getOrCreateProfile()
-    return NextResponse.json(profile)
+    return NextResponse.json(profile, { headers: corsHeaders })
   } catch (error) {
     console.error('Failed to get profile:', error)
     return NextResponse.json(
       { error: 'Failed to get profile' },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     )
   }
 }
@@ -44,12 +54,12 @@ export async function PUT(request: Request) {
       },
     })
 
-    return NextResponse.json(updated)
+    return NextResponse.json(updated, { headers: corsHeaders })
   } catch (error) {
     console.error('Failed to update profile:', error)
     return NextResponse.json(
       { error: 'Failed to update profile' },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     )
   }
 }
